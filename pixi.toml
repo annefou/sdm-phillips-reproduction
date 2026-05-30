@@ -16,13 +16,18 @@ platforms = ["linux-64", "osx-arm64", "win-64"]
 
 [dependencies]
 python = "3.12.*"
-# --- core scientific stack ---
-numpy = "*"
+# --- core scientific / tabular stack (this repro is tabular only) ---
+numpy = ">=2.0"
 pandas = ">=2.0"
-xarray = ">=2024.6"
 scipy = "*"
 matplotlib = "*"
 pyarrow = "*"
+# scikit-learn pin: elapid's MaxentModel(use_sklearn=True) targets the <1.6 API.
+scikit-learn = ">=1.2,<1.6"
+# --- disdat .rds reader (no R runtime) + HTTP + progress ---
+pyreadr = "*"
+requests = "*"
+tqdm = "*"
 # --- notebook execution + Jupyter Book ---
 jupytext = "*"
 jupyterlab = "*"
@@ -30,27 +35,17 @@ nbclient = "*"
 ipykernel = "*"
 # --- pipeline driver ---
 snakemake = "*"
-# --- replace/extend with the deps your replication needs ---
-# Examples (uncomment as needed):
-# statsmodels = "*"          # GLM/GLMM regression
-# scikit-learn = "*"         # classical ML
-# pyproj = "*"               # CRS + map projections
-# cartopy = "*"              # geographic plotting
-# netcdf4 = "*"              # NetCDF I/O — preferred over .npz for arrays (see DOMAIN.md)
-# zarr = "*"                 # Zarr — preferred for arrays >2 GB or cloud-archived (see DOMAIN.md)
-# cdsapi = "*"               # Copernicus Climate Data Store
-# copernicusmarine = "*"     # Copernicus Marine Service
-# healpix-geo = "*"          # HEALPix on geo data — preferred (use nest=True — see DOMAIN.md)
-# healpy = "*"               # HEALPix on pure-sphere (astrophysics) only
-# rasterio = "*"             # raster I/O
-# geopandas = "*"            # vector I/O
-# dask = "*"                 # out-of-core / parallel
+# elapid hard-requires these geo libs at import time (its install_requires).
+# Our notebooks never touch the geo stack — but pinning them from conda-forge
+# (prebuilt PROJ/GDAL) stops pip building pyproj/rasterio from source.
+geopandas = ">=1.0"
+rasterio = ">=1.2.1"
+pyproj = ">=3.0"
+rtree = ">=0.9"
 
-# Pip-only deps go in [pypi-dependencies]. Conda-forge is preferred where available.
-# [pypi-dependencies]
-# pygbif = "*"               # GBIF occurrences
-# polytope-client = "*"      # Destination Earth Climate DT
-# earthkit-data = "*"
+# Pip-only deps. elapid (MaxEnt / maxnet engine) is PyPI-only.
+[pypi-dependencies]
+elapid = ">=1.0.3"
 
 [feature.docs.dependencies]
 mystmd = "*"

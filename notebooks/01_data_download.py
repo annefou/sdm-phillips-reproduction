@@ -14,90 +14,178 @@
 # ---
 
 # %% [markdown]
-# # 01 — Data download
+# # 01 — Data download: the Elith et al. (2006) NCEAS benchmark
 #
-# This notebook fetches all input data needed by the replication pipeline.
-# Every dataset is downloaded from a citable source (Zenodo, GBIF, Copernicus,
-# etc.) and a record of the source is logged into `data/raw/sources.json`
-# alongside the data files.
+# This notebook fetches all input data for the reproduction. It reproduces
+# Phillips et al. (2009, `10.1890/07-2153.1`) Table 2 — that **target-group
+# background improves per-species MaxEnt AUC** — on Phillips' own benchmark
+# data.
 #
-# **Self-contained data:** The repository ships without input data. This
-# notebook is the only path that brings data into `data/raw/`. A user cloning
-# the repo and running this notebook should get a complete reproducible run.
+# **Data provenance.** The 226-species / 6-region presence-only + independent
+# presence-absence benchmark from Elith et al. (2006, *Ecography* 29:129-151) is
+# distributed as the R package **`disdat`** (Elith, Graham, Valavi et al.; data
+# paper `10.17161/bi.v15i2.13384`). The rspatial/disdat GitHub repo ships each
+# table as an `.rds` file under `inst/extdata/`. We fetch the raw `.rds` files
+# directly and read them in pure Python with **`pyreadr`** in notebook 02 — no R
+# runtime required.
 #
-# **Credentials:** if your replication uses a credentialled API, document the
-# credential setup at the top of this notebook, including:
+# Six regions: AWT (Australian Wet Tropics), CAN (Ontario, Canada), NSW (NE New
+# South Wales), NZ (New Zealand), SA (South America), SWI (Switzerland). Some
+# regions are split into biological target groups (AWT: bird, plant; NSW: 8
+# groups ba/db/nb/ot/ou/rt/ru/sr), encoded in the test-file filename suffix and
+# in the `group` column of the presence-only training tables.
 #
-# - Where the user gets the credential (URL).
-# - Where it lives on disk (or which env var Claude expects).
-# - The corresponding GitHub Actions secret name(s) for CI.
+# Per region/group there are four table types:
+#
+# - `<REGION>train_po.rds` — presence-only training rows: `spid`, `group`, `x`,
+#   `y`, env predictors. One row per presence locality.
+# - `<REGION>train_bg.rds` — 10000 random background sites (the RANDOM
+#   background), same env columns.
+# - `<REGION>test_pa[_<group>].rds` — independent presence/absence evaluation
+#   sites: one 0/1 column per species (named by `spid`), plus `siteid`, `x`, `y`.
+# - `<REGION>test_env[_<group>].rds` — env predictors at those same PA sites.
+#
+# **Credentials:** none. The disdat repo is public; data is fetched over plain
+# HTTPS from the GitHub API + raw content host. No GitHub Actions secret needed.
 
 # %%
+import hashlib
 import json
 from pathlib import Path
 
 import requests
 
+# %% [markdown]
+# ## Paths and the disdat source registry
+
 # %%
-RAW_DIR = Path("../data/raw")
+ROOT = Path("..").resolve()
+DATA = ROOT / "data"
+DISDAT_DIR = DATA / "disdat"
+RAW_DIR = DATA / "raw"
+DISDAT_DIR.mkdir(parents=True, exist_ok=True)
 RAW_DIR.mkdir(parents=True, exist_ok=True)
 
+GH_API = "https://api.github.com/repos/rspatial/disdat/contents/inst/extdata"
+GH_RAW = "https://raw.githubusercontent.com/rspatial/disdat/master/inst/extdata/"
+SOURCES_JSON = RAW_DIR / "sources.json"
+
+# Only download the rds tables we model on; skip auxiliary files (borders, etc).
+KEEP_SUFFIXES = ("train_po", "train_bg")
+KEEP_PREFIXES = ("test_pa", "test_env")  # match anywhere after the region code
+
+REGIONS = ["AWT", "CAN", "NSW", "NZ", "SA", "SWI"]
+
+print(f"disdat cache dir = {DISDAT_DIR}")
+
+
 # %% [markdown]
-# ## Source registry
+# ## Enumerate the `.rds` files via the GitHub API
 #
-# Replace the placeholder source(s) below with your actual data sources. Each
-# entry should record: name, URL or DOI, license, accessed-on date, and SHA-256
-# of the downloaded file (computed and added after first download).
+# Self-contained: list the directory, keep only the modelling tables, and record
+# which region (and group, parsed from the test-file suffix) each belongs to.
 
 # %%
-SOURCES = [
-    {
-        "name": "<dataset-name>",
-        "doi": "<10.x/y or null>",
-        "url": "<https://...>",
-        "license": "<CC-BY-4.0 / CC-BY-NC-4.0 / public-domain / ...>",
-        "accessed_on": "2026-05-30",
-        "sha256": None,  # filled after first download
+def is_modelling_table(name: str) -> bool:
+    """True for the train/test .rds tables we model on."""
+    if not name.endswith(".rds"):
+        return False
+    stem = name[:-4]
+    return (any(stem.endswith(s) for s in KEEP_SUFFIXES)
+            or any(p in stem for p in KEEP_PREFIXES))
+
+
+def enumerate_rds() -> list[str]:
+    """Return the modelling-table .rds filenames from the disdat repo."""
+    resp = requests.get(GH_API, timeout=60)
+    resp.raise_for_status()
+    names = sorted(entry["name"] for entry in resp.json())
+    keep = [n for n in names if is_modelling_table(n)]
+    print(f"GitHub lists {len(names)} files; keeping {len(keep)} modelling tables.")
+    return keep
+
+
+rds_files = enumerate_rds()
+for r in REGIONS:
+    region_files = [f for f in rds_files if f.startswith(r)]
+    print(f"  {r:<4}: {len(region_files)} tables")
+
+
+# %% [markdown]
+# ## Download (cache on disk; skip if already present and non-empty)
+
+# %%
+def download_rds(name: str) -> dict:
+    """Fetch one .rds into the cache; return a registry record with sha256."""
+    dest = DISDAT_DIR / name
+    if dest.exists() and dest.stat().st_size > 0:
+        content = dest.read_bytes()
+    else:
+        resp = requests.get(GH_RAW + name, timeout=120)
+        resp.raise_for_status()
+        content = resp.content
+        dest.write_bytes(content)
+    return {
+        "name": name,
+        "url": GH_RAW + name,
+        "bytes": len(content),
+        "sha256": hashlib.sha256(content).hexdigest(),
+    }
+
+
+records = [download_rds(name) for name in rds_files]
+total_mb = sum(r["bytes"] for r in records) / 1e6
+print(f"cached {len(records)} files ({total_mb:.1f} MB) in {DISDAT_DIR}")
+
+
+# %% [markdown]
+# ## Write the provenance registry
+
+# %%
+registry = {
+    "dataset": "Elith et al. (2006) NCEAS species distribution modelling benchmark",
+    "primary_reference": {
+        "citation": ("Elith J, Graham CH, Anderson RP, et al. (2006) Novel methods "
+                     "improve prediction of species' distributions from occurrence "
+                     "data. Ecography 29:129-151."),
+        "doi": "10.1111/j.2006.0906-7590.04596.x",
     },
-    # Add more sources here as needed.
-]
+    "data_paper": {
+        "citation": ("Elith J, Graham C, Valavi R, et al. (2020) Presence-only and "
+                     "presence-absence data for comparing species distribution "
+                     "modeling methods. Biodiversity Informatics 15(2):69-80."),
+        "doi": "10.17161/bi.v15i2.13384",
+    },
+    "reproduction_target_paper": {
+        "citation": ("Phillips SJ, Dudik M, Elith J, et al. (2009) Sample selection "
+                     "bias and presence-only distribution models: implications for "
+                     "background and pseudo-absence data. Ecological Applications "
+                     "19(1):181-197."),
+        "doi": "10.1890/07-2153.1",
+        "validation_target_table2_maxent": {
+            "random_background_mean_auc": 0.7276,
+            "target_group_background_mean_auc": 0.7569,
+            "n_species": 226,
+        },
+    },
+    "distribution_package": {
+        "name": "disdat",
+        "description": ("R data package bundling the Elith et al. 2006 NCEAS "
+                        "presence-only + independent presence-absence benchmark."),
+        "repository": "https://github.com/rspatial/disdat",
+        "github_api": GH_API,
+        "raw_base": GH_RAW,
+        "vignette": ("https://cran.r-project.org/web/packages/disdat/vignettes/"
+                     "modeling.html"),
+        "read_in_python_via": "pyreadr (no R dependency)",
+        "license": "GPL (>= 3)",
+    },
+    "regions": REGIONS,
+    "files": records,
+}
 
-
-# %% [markdown]
-# ## Download
-
-# %%
-def download_source(source: dict) -> Path:
-    """Fetch a single source into data/raw/. Replace with your real implementation."""
-    # Example skeleton — adapt to your data source's API:
-    # response = requests.get(source["url"], stream=True, timeout=300)
-    # response.raise_for_status()
-    # out_path = RAW_DIR / Path(source["url"]).name
-    # with open(out_path, "wb") as f:
-    #     for chunk in response.iter_content(chunk_size=8192):
-    #         f.write(chunk)
-    # return out_path
-    raise NotImplementedError(
-        "Implement download for: " + source["name"] + ". "
-        "See data/README.md for common patterns."
-    )
-
-
-# %%
-# Uncomment when SOURCES is populated:
-# for source in SOURCES:
-#     print(f"Fetching {source['name']}...")
-#     path = download_source(source)
-#     print(f"  -> {path}")
-
-# %% [markdown]
-# ## Source log
-#
-# Persist the source registry to disk so that downstream notebooks can audit
-# what data was used and when.
-
-# %%
-with open(RAW_DIR / "sources.json", "w") as f:
-    json.dump({"sources": SOURCES}, f, indent=2)
-
-print(f"Logged {len(SOURCES)} source(s) to {RAW_DIR / 'sources.json'}")
+with open(SOURCES_JSON, "w") as f:
+    json.dump(registry, f, indent=2)
+print(f"wrote {SOURCES_JSON}")
+print(json.dumps({k: registry[k] for k in ("dataset", "regions")}, indent=2))
+print(f"file count in registry: {len(registry['files'])}")

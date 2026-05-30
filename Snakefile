@@ -1,13 +1,22 @@
-# Snakefile — orchestrates the replication pipeline end-to-end.
+# Snakefile — orchestrates the Phillips (2009) reproduction pipeline end-to-end.
 #
-# Replace the placeholder rules with your actual replication steps. The
-# canonical pattern is one rule per pipeline stage, and each rule wraps a
-# notebook executed via jupytext (so the notebook stays the source of truth
-# and the Snakefile just sequences them).
+# Reproduces Phillips et al. (2009, 10.1890/07-2153.1) Table 2 (Maxent row) on
+# the Elith et al. (2006) NCEAS benchmark (distributed as the disdat R package,
+# read via pyreadr). Four notebooks, four rules; each rule converts the jupytext
+# .py to .ipynb and executes it in place so the notebook stays the source of
+# truth and Snakemake just sequences them.
+#
+#   01_data_download -> data/raw/sources.json + data/disdat/*.rds
+#   02_data_clean    -> data/clean/*.parquet + data/clean/clean_manifest.json
+#   03_analysis      -> results/repro_phillips_auc.parquet + results/headline.json
+#   04_figures       -> figures/main_result.{png,pdf}
 #
 # Usage:
-#   snakemake --cores 1                  # run everything
-#   snakemake --cores 1 -n               # dry run
+#   pixi run snakemake --cores 1            # run everything
+#   pixi run snakemake --cores 1 -n         # dry run
+#
+# Smoke test (cap the work for a quick DAG check), set env vars first, e.g.:
+#   REPRO_REGIONS=AWT,CAN REPRO_MIN_PRESENCE=20 pixi run snakemake --cores 1
 
 NOTEBOOKS = "notebooks"
 DATA = "data"
@@ -17,48 +26,75 @@ FIGURES = "figures"
 
 rule all:
     input:
-        # Replace with your actual final artefacts:
         f"{FIGURES}/main_result.png",
-        f"{RESULTS}/summary.csv",
+        f"{RESULTS}/headline.json",
 
 
 # ---------- 01: Data download ----------
-# Every replication MUST be self-contained: data is downloaded by the notebook,
-# never assumed to exist locally. See CLAUDE.md § Self-contained data.
+# Self-contained: enumerate + fetch the disdat .rds tables (train_po / train_bg
+# / test_pa / test_env for 6 regions) from rspatial/disdat; write a provenance
+# registry. No credentials needed.
 rule data_download:
     output:
-        f"{DATA}/raw/dataset.zip",
+        sources = f"{DATA}/raw/sources.json",
     log:
         f"{RESULTS}/logs/01_data_download.log",
     shell:
-        f"cd {{NOTEBOOKS}} && jupytext --to notebook --execute 01_data_download.py 2>&1 | tee ../{{log}}"
+        "mkdir -p $(dirname {log}) {DATA}/disdat && "
+        "cd " + NOTEBOOKS + " && "
+        "jupytext --to notebook 01_data_download.py && "
+        "jupyter execute --inplace 01_data_download.ipynb 2>&1 | tee ../{log}"
 
 
 # ---------- 02: Data clean ----------
+# Read the .rds via pyreadr; assemble tidy per-region/group parquet tables
+# (presence-only, random background, presence-absence + env) + a manifest.
 rule data_clean:
     input:
-        f"{DATA}/raw/dataset.zip",
+        sources = f"{DATA}/raw/sources.json",
     output:
-        f"{DATA}/clean/dataset.parquet",
+        manifest = f"{DATA}/clean/clean_manifest.json",
+    log:
+        f"{RESULTS}/logs/02_data_clean.log",
     shell:
-        f"cd {{NOTEBOOKS}} && jupytext --to notebook --execute 02_data_clean.py"
+        "mkdir -p $(dirname {log}) {DATA}/clean && "
+        "cd " + NOTEBOOKS + " && "
+        "jupytext --to notebook 02_data_clean.py && "
+        "jupyter execute --inplace 02_data_clean.ipynb 2>&1 | tee ../{log}"
 
 
 # ---------- 03: Analysis ----------
+# Per region/group: fit elapid MaxEnt with random vs target-group background,
+# evaluate per-species AUC on the independent presence-absence sites, aggregate.
 rule analysis:
     input:
-        f"{DATA}/clean/dataset.parquet",
+        manifest = f"{DATA}/clean/clean_manifest.json",
     output:
-        f"{RESULTS}/summary.csv",
+        auc = f"{RESULTS}/repro_phillips_auc.parquet",
+        headline = f"{RESULTS}/headline.json",
+    log:
+        f"{RESULTS}/logs/03_analysis.log",
     shell:
-        f"cd {{NOTEBOOKS}} && jupytext --to notebook --execute 03_analysis.py"
+        "mkdir -p $(dirname {log}) " + RESULTS + " && "
+        "cd " + NOTEBOOKS + " && "
+        "jupytext --to notebook 03_analysis.py && "
+        "jupyter execute --inplace 03_analysis.ipynb 2>&1 | tee ../{log}"
 
 
 # ---------- 04: Figures ----------
+# Mean AUC random vs target-group (overall + per region), with Phillips' Table 2
+# (Maxent) reference values marked.
 rule figures:
     input:
-        f"{RESULTS}/summary.csv",
+        auc = f"{RESULTS}/repro_phillips_auc.parquet",
+        headline = f"{RESULTS}/headline.json",
     output:
-        f"{FIGURES}/main_result.png",
+        main_png = f"{FIGURES}/main_result.png",
+        main_pdf = f"{FIGURES}/main_result.pdf",
+    log:
+        f"{RESULTS}/logs/04_figures.log",
     shell:
-        f"cd {{NOTEBOOKS}} && jupytext --to notebook --execute 04_figures.py"
+        "mkdir -p $(dirname {log}) " + FIGURES + " && "
+        "cd " + NOTEBOOKS + " && "
+        "jupytext --to notebook 04_figures.py && "
+        "jupyter execute --inplace 04_figures.ipynb 2>&1 | tee ../{log}"
