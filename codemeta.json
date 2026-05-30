@@ -29,11 +29,27 @@
     }
   ],
   "keywords": [
-    "replication",
+    "reproduction",
     "reproducibility",
     "FORRT",
     "nanopublication",
-    "Science-Live"
+    "Science-Live",
+    "species-distribution-model",
+    "MaxEnt",
+    "target-group-background",
+    "sample-selection-bias",
+    "AUC"
+  ],
+  "softwareRequirements": [
+    "Python 3.12",
+    "elapid (MaxEnt presence-background SDM)",
+    "pyreadr (read R .rds disdat data in Python)",
+    "scikit-learn",
+    "pandas",
+    "numpy",
+    "scipy",
+    "matplotlib",
+    "snakemake"
   ],
   "referencePublication": {
     "@type": "ScholarlyArticle",

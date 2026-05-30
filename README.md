@@ -10,10 +10,14 @@
 [![Science Live](https://img.shields.io/badge/Science%20Live-nanopub%20chain-purple)](nanopubs/PUBLISHED.md)
 [![RO-Crate](https://img.shields.io/badge/RO--Crate-1.2-orange)](ro-crate-metadata.json)
 
-> **Sample selection bias and presence-only distribution models: implications for background and pseudo-absence data** — replication study.
+> **Sample selection bias and presence-only distribution models: implications for background and pseudo-absence data** — reproduction study.
 > Reference paper: [10.1890/07-2153.1](https://doi.org/10.1890/07-2153.1)
 
-This is a self-contained replication of the headline claim of the reference paper. It produces a reproducible computational pipeline, a Zenodo-archived release with a citable DOI, and a FORRT-tagged nanopublication chain on the [Science Live platform](https://platform.sciencelive4all.org).
+This is a self-contained **reproduction** of the headline result of Phillips et al. (2009) Table 2 — *target-group background improves presence-only SDM predictive performance* — on the original Elith et al. (2006) NCEAS benchmark data (the [`disdat`](https://github.com/rspatial/disdat) package, read in Python via `pyreadr`), using `elapid` MaxEnt.
+
+**Result (Validated):** per-species MaxEnt mean AUC improves from **0.7163** (random background) to **0.7468** (target-group background), a **+0.0305** gain (paired Wilcoxon p = 1.6×10⁻⁶) — reproducing Phillips' Table 2 Maxent row (0.7276 → 0.7569, +0.0293). The gain is largest in the most sampling-biased region (Ontario/CAN, +0.13) and absent in the least-biased (South Africa), reproducing the bias-gradient pattern of his Table 4.
+
+This reproduction **validates the target-group-background implementation** used by the sibling replication [`sdm-hotspot-spatial-effort`](https://github.com/annefou/sdm-hotspot-spatial-effort), which tests whether the same correction can restore biodiversity-*hotspot* identity (it cannot). It produces a reproducible pipeline, a Zenodo-archived release with a citable DOI, and a FORRT-tagged nanopublication chain on the [Science Live platform](https://platform.sciencelive4all.org).
 
 ---
 

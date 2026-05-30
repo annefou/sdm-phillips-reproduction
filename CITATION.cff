@@ -19,11 +19,16 @@ identifiers:
     value: "{{ZENODO_DOI}}"
     description: "Concept DOI (resolves to the latest version)"
 keywords:
-  - replication
+  - reproduction
   - reproducibility
   - FORRT
   - nanopublication
   - Science-Live
+  - species-distribution-model
+  - MaxEnt
+  - target-group-background
+  - sample-selection-bias
+  - AUC
 references:
   - type: article
     title: "Sample selection bias and presence-only distribution models: implications for background and pseudo-absence data"
@@ -32,3 +37,21 @@ references:
         given-names: "Steven"
     year: "2009"
     doi: "10.1890/07-2153.1"
+  # Benchmark data reproduced here: the Elith et al. 2006 NCEAS dataset,
+  # packaged as the disdat R package (read in Python via pyreadr).
+  - type: data
+    title: "Presence-only and presence-absence data for comparing species distribution modeling methods (disdat)"
+    authors:
+      - family-names: "Elith"
+        given-names: "Jane"
+      - family-names: "Graham"
+        given-names: "Catherine"
+      - family-names: "Valavi"
+        given-names: "Roozbeh"
+    year: "2020"
+    doi: "10.17161/bi.v15i2.13384"
+  # Sibling replication whose target-group-background method this work validates.
+  - type: software
+    title: "sdm-hotspot-spatial-effort — does target-group background restore GBIF biodiversity hotspots?"
+    url: "https://github.com/annefou/sdm-hotspot-spatial-effort"
+    notes: "This reproduction validates the elapid MaxEnt + target-group-background implementation used by that Iberian-hotspot replication."
