@@ -2,6 +2,16 @@
 
 This file is the canonical registry of published nanopub URIs for this replication. Update it as you publish each step.
 
+## Release & archival artefacts
+
+| Artefact | Identifier | Notes |
+|---|---|---|
+| Source — concept DOI | [10.5281/zenodo.20473156](https://doi.org/10.5281/zenodo.20473156) | Resolves to the latest version. Cited in `CITATION.cff` / `codemeta.json`. |
+| Source — version DOI (v0.1.0) | [10.5281/zenodo.20473157](https://doi.org/10.5281/zenodo.20473157) | This release's immutable snapshot. |
+| GitHub release | [v0.1.0](https://github.com/annefou/sdm-phillips-reproduction/releases/tag/v0.1.0) | |
+| Docker image (GHCR) | `ghcr.io/annefou/sdm-phillips-reproduction:0.1.0` (also `:latest`) | Built + pushed by `docker.yml` on release. Make the package public in repo → Packages if not already. |
+| Docker image — Zenodo DOI | _not minted_ | Optional (FAIR4RS A2). Set the `ZENODO_TOKEN` repo secret and re-run `docker.yml` to archive the image with its own DOI. |
+
 ## Chain
 
 | Step | Template | URI | Published |
