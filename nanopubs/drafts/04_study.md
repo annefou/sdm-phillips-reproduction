@@ -64,7 +64,7 @@ The Elith et al. 2006 NCEAS presence-only / presence-absence benchmark — the s
 
 ### Search keywords (Wikidata) (multi-select, optional)
 
-Intended labels: `species distribution model`, `MaxEnt`, `sampling bias`, `receiver operating characteristic`. *(Provide as search labels in the UI; skip any without a clean match.)*
+Intended labels: `species distribution model`, `sampling bias`, `receiver operating characteristic`. *(Provide as search labels in the UI; skip any without a clean match.)*
 
 ### Search discipline (Wikidata) (search, optional)
 

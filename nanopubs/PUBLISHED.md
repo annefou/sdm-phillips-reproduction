@@ -6,10 +6,10 @@ This file is the canonical registry of published nanopub URIs for this replicati
 
 | Step | Template | URI | Published |
 |---|---|---|---|
-| 01 | Quote-with-comment (or PICO / PCC) | _not yet published_ | |
-| 02 | AIDA Sentence | _not yet published_ | |
-| 03 | FORRT Claim | _not yet published_ | |
-| 04 | FORRT Replication Study | _not yet published_ | |
+| 01 | Quote-with-comment (or PICO / PCC) | https://w3id.org/sciencelive/np/RAaLMzZpNPytqGikM3VIvwux8bxJNctgTTeFB8srYHjy8 | |
+| 02 | AIDA Sentence | https://w3id.org/sciencelive/np/RA_OZAEn8FwHzKGJSnvCSqvJk9lI4XMA2ZthNw111zURQ | |
+| 03 | FORRT Claim | https://w3id.org/sciencelive/np/RAHF_1MUfAVbXhXvj_Wtq8GsP8ZWjc9LerDhdLqhv_SzE | |
+| 04 | FORRT Replication Study | https://w3id.org/sciencelive/np/RAnYD9w4jylurPK2GH4-YmKtiqyNOy8is8itzxuTgd3Qw | |
 | 05 | FORRT Replication Outcome | _not yet published_ | |
 | 06 | CiTO Citation | _not yet published_ | |
 

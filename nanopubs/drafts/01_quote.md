@@ -40,7 +40,7 @@ Character count: 228 / 500.
 ### Comment (textarea, required)
 
 ```
-This repository reproduces the AUC-improvement result behind this sentence on Phillips' own data (the Elith et al. 2006 NCEAS dataset). Using per-species MaxEnt, we compare random background against target-group background and measure AUC on the independent presence-absence evaluation sites, testing whether the target-group gain reported in Phillips Table 2 reproduces in sign and magnitude with an independent open-source MaxEnt engine.
+Can we reproduce the AUC-improvement result behind this sentence on Phillips' own data (the Elith et al. 2006 NCEAS dataset)? Using per-species MaxEnt, we can compare random background against target-group background and measure AUC on the independent presence-absence evaluation sites, testing whether the target-group gain reported in Phillips Table 2 reproduces in sign and magnitude with an independent open-source MaxEnt engine.
 ```
 
 Character count: 437 / 500.
