@@ -10,15 +10,8 @@ This file is the canonical registry of published nanopub URIs for this replicati
 | 02 | AIDA Sentence | https://w3id.org/sciencelive/np/RA_OZAEn8FwHzKGJSnvCSqvJk9lI4XMA2ZthNw111zURQ | |
 | 03 | FORRT Claim | https://w3id.org/sciencelive/np/RAHF_1MUfAVbXhXvj_Wtq8GsP8ZWjc9LerDhdLqhv_SzE | |
 | 04 | FORRT Replication Study | https://w3id.org/sciencelive/np/RAnYD9w4jylurPK2GH4-YmKtiqyNOy8is8itzxuTgd3Qw | |
-| 05 | FORRT Replication Outcome | _not yet published_ | |
-| 06 | CiTO Citation | _not yet published_ | |
-
-## Optional layers
-
-| Step | Template | URI | Published |
-|---|---|---|---|
-| 07 | Research Software (if applicable) | _not applicable / not yet published_ | |
-| 08 | Research Synthesis (if applicable) | _not applicable / not yet published_ | |
+| 05 | FORRT Replication Outcome | https://w3id.org/sciencelive/np/RA_uV84IchQAkkmCP_6amQir_flgCmvvt97DWIDmbu_V0 | |
+| 06 | CiTO Citation | https://w3id.org/sciencelive/np/RAWsmCzWMKYQQK_ovRvE1o2wqjYkoxjfZRncHEcWAvv2g | |
 
 ## Format
 
